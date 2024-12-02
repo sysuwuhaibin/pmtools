@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>$APPEALS 模型分析工具</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+    <script>
+        window.onload = function() {
+            if (typeof Chart === 'undefined') {
+                const script = document.createElement('script');
+                script.src = 'https://cdn.jsdelivr.net/npm/chart.js';
+                document.head.appendChild(script);
+                script.onload = initChart;
+                script.onerror = function() {
+                    alert('图表库加载失败，请检查网络连接');
+                };
+            }
+        };
+    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <style>
+        /* 自定义滚动条样式 */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 3px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #666;
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <div class="container mx-auto px-4 py-6">
+        <!-- 修改标题部分的布局 -->
+        <div class="flex items-center mb-8 relative">
+            <a href="index.html" class="text-sm text-gray-500 hover:text-gray-700 inline-flex items-center gap-1 absolute left-0">
+                <i class="ri-arrow-left-line"></i>
+                <span>返回首页</span>
+            </a>
+            <h1 class="text-2xl font-bold text-gray-800 flex-1 text-center">$APPEALS 模型分析工具</h1>
+        </div>
+        
+        <!-- 雷达图卡片 -->
+        <div class="bg-white rounded-xl shadow-lg p-6 relative">
+            <!-- 按钮组 -->
+            <div class="absolute top-4 right-4">
+                <div class="relative">
+                    <button onclick="toggleMenu()" 
+                            class="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+                        <i class="ri-more-2-fill text-lg"></i>
+                    </button>
+                    
+                    <!-- 下拉菜单 -->
+                    <div id="actionMenu" 
+                         class="hidden absolute right-0 top-full mt-1 bg-white rounded-lg shadow-lg border py-1 min-w-[120px] z-10">
+                        <button onclick="openScoringDialog()" 
+                                class="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2">
+                            <i class="ri-edit-line"></i>
+                            <span>打分评估</span>
+                        </button>
+                        <button onclick="openManageItemsDialog()" 
+                                class="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2">
+                            <i class="ri-settings-line"></i>
+                            <span>管理细项</span>
+                        </button>
+                        <hr class="my-1 border-gray-200">
+                        <button onclick="resetData()" 
+                                class="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2">
+                            <i class="ri-refresh-line"></i>
+                            <span>重置数据</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 雷达图容器 -->
+            <div class="max-w-2xl mx-auto h-[550px]">
+                <canvas id="appealsChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- 打分对话框 -->
+    <div id="scoringDialog" class="fixed inset-0 bg-black bg-opacity-50 hidden overflow-y-auto">
+        <div class="min-h-screen flex items-center justify-center p-4">
+            <div class="bg-white rounded-xl max-w-3xl w-full mx-auto p-6 relative">
+                <button onclick="closeDialog('scoringDialog')" 
+                        class="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
+                    <i class="ri-close-line text-xl"></i>
+                </button>
+                
+                <h2 class="text-xl font-bold mb-4">维度评分</h2>
+                <div class="max-h-[70vh] overflow-y-auto custom-scrollbar pr-2">
+                    <div id="scoringForm" class="space-y-4">
+                        <!-- 动态生成评分表单 -->
+                    </div>
+                </div>
+                <div class="mt-6 flex justify-end gap-3">
+                    <button onclick="closeDialog('scoringDialog')" 
+                            class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg">
+                        取消
+                    </button>
+                    <button onclick="submitScores()" 
+                            class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
+                        保存评分
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 管理细项对话框 -->
+    <div id="manageItemsDialog" class="fixed inset-0 bg-black bg-opacity-50 hidden overflow-y-auto">
+        <div class="min-h-screen flex items-center justify-center p-4">
+            <div class="bg-white rounded-xl max-w-4xl w-full mx-auto p-6 relative">
+                <button onclick="closeDialog('manageItemsDialog')" 
+                        class="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
+                    <i class="ri-close-line text-xl"></i>
+                </button>
+                
+                <h2 class="text-xl font-bold mb-4">管理维度细项</h2>
+                <div class="max-h-[70vh] overflow-y-auto custom-scrollbar">
+                    <div id="manageForm" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- 动态生成管理表单 -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    // 定义数据结构
+    const appealsData = {
+        price: {
+            name: '价格',
+            items: [
+                { name: '购买价格', score: 0 },
+                { name: '付款方式', score: 0 },
+                { name: '服务费', score: 0 },
+                { name: '运输费', score: 0 },
+                { name: '其他优惠', score: 0 }
+            ]
+        },
+        availability: {
+            name: '可获得性',
+            items: [
+                { name: '到货时间', score: 0 },
+                { name: '安装时间', score: 0 },
+                { name: '购买体验', score: 0 },
+                { name: '样板客户', score: 0 },
+                { name: '当地销售点', score: 0 },
+                { name: '代理商', score: 0 }
+            ]
+        },
+        packaging: {
+            name: '包装',
+            items: [
+                { name: '机柜设计', score: 0 },
+                { name: '布线', score: 0 },
+                { name: '噪声', score: 0 },
+                { name: '外观', score: 0 },
+                { name: '运输包装', score: 0 },
+                { name: '界面设计', score: 0 }
+            ]
+        },
+        performance: {
+            name: '功能性能',
+            items: [
+                { name: '主要功能', score: 0 },
+                { name: '附加功能', score: 0 },
+                { name: '增值功能', score: 0 },
+                { name: '容量', score: 0 }
+            ]
+        },
+        easeOfUse: {
+            name: '易用性',
+            items: [
+                { name: '易于维护', score: 0 },
+                { name: '兼容性', score: 0 },
+                { name: '易使用', score: 0 },
+                { name: '易操作', score: 0 },
+                { name: '高集成度', score: 0 },
+                { name: '统一管理', score: 0 }
+            ]
+        },
+        assurance: {
+            name: '保证',
+            items: [
+                { name: '质量', score: 0 },
+                { name: '安全性', score: 0 },
+                { name: '技术支持', score: 0 },
+                { name: '可靠性', score: 0 },
+                { name: '文档', score: 0 },
+                { name: '保修服务', score: 0 }
+            ]
+        },
+        lifecycleCost: {
+            name: '生命周期成本',
+            items: [
+                { name: '维护服务费用', score: 0 },
+                { name: '单项服务费用', score: 0 },
+                { name: '培训费用', score: 0 },
+                { name: '升级费用', score: 0 },
+                { name: '二次开发成本', score: 0 }
+            ]
+        },
+        socialAcceptance: {
+            name: '社会接受程度',
+            items: [
+                { name: '产业政策', score: 0 },
+                { name: '市场环境', score: 0 },
+                { name: '渠道宣传', score: 0 },
+                { name: '资质', score: 0 },
+                { name: '应用案例', score: 0 }
+            ]
+        }
+    };
+
+    // 声明全局变量存储图表实例
+    let appealsChart = null;
+
+    // 修改初始化图表函数
+    function initChart() {
+        try {
+            // 如果已存在图表实例，先销毁它
+            if (appealsChart) {
+                appealsChart.destroy();
+            }
+
+            const ctx = document.getElementById('appealsChart').getContext('2d');
+            appealsChart = new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: Object.values(appealsData).map(d => d.name),
+                    datasets: [{
+                        label: '$APPEALS 评分',
+                        data: Object.values(appealsData).map(d => 
+                            d.items.length ? d.items.reduce((sum, item) => sum + item.score, 0) / d.items.length : 0
+                        ),
+                        backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                        borderColor: 'rgb(54, 162, 235)',
+                        pointBackgroundColor: 'rgb(54, 162, 235)',
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: 'rgb(54, 162, 235)'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    scales: {
+                        r: {
+                            min: 0,
+                            max: 10,
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 2
+                            }
+                        }
+                    }
+                }
+            });
+        } catch (error) {
+            console.error('初始化图表失败:', error);
+        }
+    }
+
+    // 修改页面加载时的初始化顺序
+    document.addEventListener('DOMContentLoaded', function() {
+        loadFromLocal();  // 先加载数据
+        initChart();      // 然后初始化图表
+
+        // 点击其他地方关闭菜单
+        document.addEventListener('click', function(event) {
+            const menu = document.getElementById('actionMenu');
+            if (!menu) return; // 如果菜单不存在，直接返回
+
+            const menuButton = event.target.closest('button');
+            
+            if (!menu.classList.contains('hidden') && 
+                !menuButton?.matches('[onclick="toggleMenu()"]')) {
+                menu.classList.add('hidden');
+            }
+        });
+    });
+
+    // 打开打分对话框
+    function openScoringDialog() {
+        const form = document.getElementById('scoringForm');
+        form.innerHTML = '';
+        
+        Object.entries(appealsData).forEach(([key, dimension]) => {
+            const section = document.createElement('div');
+            section.className = 'bg-gray-50 rounded-lg p-4';
+            
+            // 创建维度标题和平均分显示
+            const header = document.createElement('div');
+            header.className = 'flex items-center justify-between mb-2';
+            const avgScore = dimension.items.reduce((sum, item) => sum + item.score, 0) / dimension.items.length;
+            header.innerHTML = `
+                <h3 class="font-semibold text-gray-700">${dimension.name}</h3>
+                <span class="text-sm text-gray-500">平均分：${avgScore.toFixed(1)}</span>
+            `;
+            
+            // 创评分项表格
+            const table = document.createElement('div');
+            table.className = 'grid grid-cols-2 gap-x-4 gap-y-2';
+            table.innerHTML = dimension.items.map(item => `
+                <div class="flex items-center justify-between">
+                    <label class="text-sm text-gray-600">${item.name}</label>
+                    <div class="flex items-center gap-1">
+                        <input type="number" 
+                               min="0" 
+                               max="10" 
+                               step="0.5"
+                               class="w-16 text-right border rounded px-2 py-1 text-sm focus:ring-1 focus:ring-blue-500" 
+                               value="${item.score}"
+                               data-dimension="${key}"
+                               data-item="${item.name}"
+                               onchange="updateAverage(this, '${key}')">
+                        <span class="text-sm text-gray-400">分</span>
+                    </div>
+                </div>
+            `).join('');
+            
+            section.appendChild(header);
+            section.appendChild(table);
+            form.appendChild(section);
+        });
+        
+        openDialog('scoringDialog');
+    }
+
+    // 添加实时更新平均分的函数
+    function updateAverage(input, dimensionKey) {
+        const dimension = appealsData[dimensionKey];
+        const section = input.closest('.bg-gray-50');
+        const avgSpan = section.querySelector('.text-gray-500');
+        
+        // 收集当前所有输入的分数
+        const inputs = section.querySelectorAll('input[type="number"]');
+        let sum = 0;
+        inputs.forEach(inp => {
+            sum += parseFloat(inp.value) || 0;
+        });
+        
+        // 更新平均分显示
+        const avg = sum / dimension.items.length;
+        avgSpan.textContent = `平均分：${avg.toFixed(1)}`;
+    }
+
+    // 添加数据持久化相关的函数
+    const STORAGE_KEY = 'appeals_data';
+
+    // 保存数据到本地
+    function saveToLocal() {
+        try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(appealsData));
+            showToast('数据已保存');
+        } catch (error) {
+            console.error('保存数据失败:', error);
+            alert('保存数据失败');
+        }
+    }
+
+    // 从本地读取数据
+    function loadFromLocal() {
+        try {
+            const savedData = localStorage.getItem(STORAGE_KEY);
+            if (savedData) {
+                Object.assign(appealsData, JSON.parse(savedData));
+                updateChart(); // 更新图表显示
+                showToast('数据已加载');
+            }
+        } catch (error) {
+            console.error('读取数据失败:', error);
+            alert('读取数据失败');
+        }
+    }
+
+    // 优化提交函数
+    function submitScores() {
+        try {
+            const inputs = document.querySelectorAll('#scoringForm input');
+            let hasChanges = false;
+            
+            inputs.forEach(input => {
+                const dimension = input.dataset.dimension;
+                const itemName = input.dataset.item;
+                const newScore = parseFloat(input.value) || 0;
+                
+                // 验证分数范围
+                if (newScore < 0 || newScore > 10) {
+                    throw new Error(`${itemName} 的分数必须在 0-10 之间`);
+                }
+                
+                // 查找并更新对应项目的分数
+                const item = appealsData[dimension].items.find(i => i.name === itemName);
+                if (item && item.score !== newScore) {
+                    item.score = newScore;
+                    hasChanges = true;
+                }
+            });
+            
+            if (hasChanges) {
+                updateChart();
+                saveToLocal();
+                closeDialog('scoringDialog');
+                showToast('评分已更新');
+            } else {
+                closeDialog('scoringDialog');
+            }
+        } catch (error) {
+            alert(error.message || '提交失败，请检查输入');
+        }
+    }
+
+    // 修改更新图表函数
+    function updateChart() {
+        if (!appealsChart) {
+            initChart();
+            return;
+        }
+        
+        appealsChart.data.datasets[0].data = Object.values(appealsData).map(d => 
+            d.items.length ? d.items.reduce((sum, item) => sum + item.score, 0) / d.items.length : 0
+        );
+        appealsChart.update();
+    }
+
+    // 打开管理细项对话框
+    function openManageItemsDialog() {
+        const form = document.getElementById('manageForm');
+        form.innerHTML = '';
+        
+        Object.entries(appealsData).forEach(([key, dimension]) => {
+            const section = document.createElement('div');
+            section.className = 'bg-gray-50 p-4 rounded-lg';
+            section.innerHTML = `
+                <div class="flex items-center justify-between mb-3">
+                    <h3 class="font-semibold text-lg text-gray-700">${dimension.name}</h3>
+                    <button onclick="addNewItem('${key}')" 
+                            class="text-blue-500 hover:text-blue-600 text-sm">
+                        <i class="ri-add-line"></i> 添加细项
+                    </button>
+                </div>
+                <div id="${key}-items" class="space-y-2">
+                    ${dimension.items.map((item, index) => `
+                        <div class="flex items-center gap-2 bg-white p-2 rounded-lg">
+                            <span class="text-gray-600 text-sm">${index + 1}.</span>
+                            <span class="flex-1">${item.name}</span>
+                            <button onclick="removeItem('${key}', '${item.name}')" 
+                                    class="text-red-400 hover:text-red-500">
+                                <i class="ri-delete-bin-line"></i>
+                            </button>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+            form.appendChild(section);
+        });
+        
+        openDialog('manageItemsDialog');
+    }
+
+    // 修改管理细项相关函数，添加自动保存
+    function addNewItem(dimension) {
+        const itemName = prompt('请输入新细项名称：');
+        if (!itemName) return;
+        
+        if (appealsData[dimension].items.some(item => item.name === itemName)) {
+            alert('该细项已存在！');
+            return;
+        }
+        
+        appealsData[dimension].items.push({
+            name: itemName,
+            score: 0
+        });
+        
+        refreshDimensionItems(dimension);
+        updateChart();
+        saveToLocal(); // 保存更新后的数据
+    }
+
+    // 删除细项
+    function removeItem(dimension, itemName) {
+        if (!confirm(`确定要删除 "${itemName}" 吗？`)) return;
+        
+        appealsData[dimension].items = appealsData[dimension].items.filter(
+            item => item.name !== itemName
+        );
+        
+        refreshDimensionItems(dimension);
+        updateChart();
+        saveToLocal(); // 保存更新后的数据
+    }
+
+    // 刷新某个维度的细项显示
+    function refreshDimensionItems(dimension) {
+        const container = document.getElementById(`${dimension}-items`);
+        if (!container) return;
+        
+        container.innerHTML = appealsData[dimension].items.map((item, index) => `
+            <div class="flex items-center gap-2 bg-white p-2 rounded-lg">
+                <span class="text-gray-600 text-sm">${index + 1}.</span>
+                <span class="flex-1">${item.name}</span>
+                <button onclick="removeItem('${dimension}', '${item.name}')" 
+                        class="text-red-400 hover:text-red-500">
+                    <i class="ri-delete-bin-line"></i>
+                </button>
+            </div>
+        `).join('');
+    }
+
+    // 关闭对话框函数
+    function closeDialog(dialogId) {
+        document.getElementById(dialogId).classList.add('hidden');
+    }
+
+    // 打开对话框函数
+    function openDialog(dialogId) {
+        document.getElementById(dialogId).classList.remove('hidden');
+    }
+
+    // 添加一个简单的提示函数
+    function showToast(message) {
+        // 创建提示元素
+        const toast = document.createElement('div');
+        toast.className = 'fixed bottom-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg transition-opacity duration-300';
+        toast.textContent = message;
+        
+        // 添加到页面
+        document.body.appendChild(toast);
+        
+        // 2秒后移除
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            setTimeout(() => toast.remove(), 300);
+        }, 2000);
+    }
+
+    // ESC 键关闭对话框
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape') {
+            const dialogs = document.querySelectorAll('.fixed.inset-0');
+            dialogs.forEach(dialog => {
+                if (!dialog.classList.contains('hidden')) {
+                    dialog.classList.add('hidden');
+                }
+            });
+        }
+    });
+
+    // 点击对话框外部关闭
+    document.querySelectorAll('.fixed.inset-0').forEach(dialog => {
+        dialog.addEventListener('click', function(event) {
+            if (event.target === this) {
+                dialog.classList.add('hidden');
+            }
+        });
+    });
+
+    // 添加重置数据的功能（可选）
+    function resetData() {
+        if (confirm('确定要重置所有数据吗？这将删除所有已保存的评分和自定义细项。')) {
+            localStorage.removeItem(STORAGE_KEY);
+            location.reload(); // 刷新页面
+        }
+    }
+
+    // 可以添加一个重置按钮（可选）
+
+    // 添加下拉菜单控制函数
+    function toggleMenu() {
+        const menu = document.getElementById('actionMenu');
+        if (!menu) return;
+        
+        // 切换菜单显示状态
+        menu.classList.toggle('hidden');
+        
+        // 添加点击外部关闭功能
+        const closeMenu = (e) => {
+            if (!menu.contains(e.target) && !e.target.matches('[onclick="toggleMenu()"]')) {
+                menu.classList.add('hidden');
+                document.removeEventListener('click', closeMenu);
+            }
+        };
+        
+        // 延迟添加事件监听，避免立即触发
+        setTimeout(() => {
+            document.addEventListener('click', closeMenu);
+        }, 0);
+    }
+    </script>
+</body>
+</html> 

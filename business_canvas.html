@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <title>商业画布</title>
+    <style>
+        body {
+            background: #e8ebf1;
+            height: 100vh;
+            margin: 0;
+            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+        }
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 20px;
+            height: 100%;
+        }
+        .canvas {
+            background: #ffffff;
+            border-radius: 20px;
+            box-shadow: 
+                0 10px 20px rgba(0, 0, 0, 0.1),
+                0 6px 6px rgba(0, 0, 0, 0.05),
+                inset 0 -5px 12px rgba(0, 0, 0, 0.05);
+            padding: 15px;
+            margin-bottom: 24px;
+            height: auto;
+            min-height: 75vh;
+        }
+        .canvas.bottom {
+            min-height: 25vh;
+        }
+        .section {
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 20px;
+            height: 100%;
+            min-height: 200px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 
+                0 4px 6px rgba(0, 0, 0, 0.05),
+                inset 0 2px 4px rgba(255, 255, 255, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+        }
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid rgba(0, 0, 0, 0.05);
+        }
+        .section-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #1a1a1a;
+        }
+        .add-btn {
+            width: 24px;
+            height: 24px;
+            border-radius: 12px;
+            background: #4f46e5;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 4px rgba(79, 70, 229, 0.2);
+        }
+        .add-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 3px 6px rgba(79, 70, 229, 0.3);
+        }
+        .tags-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            padding: 8px;
+            flex: 1;
+            overflow-y: auto;
+        }
+        .tag {
+            min-height: 28px;
+            max-height: 76px;
+            height: auto;
+            padding: 8px 12px;
+            background: #4f46e5;
+            border-radius: 4px;
+            font-size: 1rem;
+            color: white;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            margin: 4px;
+            flex-wrap: wrap;
+            word-break: break-all;
+            white-space: normal;
+            line-height: 22px;
+        }
+        .delete-btn {
+            color: rgba(255, 255, 255, 0.8);
+            cursor: pointer;
+            font-size: 1.2rem;
+            width: 16px;
+            height: 16px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .delete-btn:hover {
+            color: white;
+        }
+        .dialog {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        .dialog.hidden {
+            display: none;
+        }
+        .dialog-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+        }
+        .dialog-content {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            width: 320px;
+            position: relative;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        }
+        .dialog-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: #1a1a1a;
+        }
+        .dialog-input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            margin-bottom: 16px;
+            font-size: 0.95rem;
+        }
+        .dialog-buttons {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+        }
+        .dialog-btn {
+            padding: 6px 16px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            cursor: pointer;
+        }
+        .cancel-btn {
+            background: #f3f4f6;
+            color: #4b5563;
+        }
+        .confirm-btn {
+            background: #4f46e5;
+            color: white;
+        }
+        .canvas-table {
+            width: 100%;
+            height: 100%;
+            border-collapse: separate;
+            border-spacing: 16px;
+        }
+        .canvas-table td {
+            padding: 0;
+            vertical-align: top;
+        }
+        .split-section {
+            height: calc(50% - 8px);
+            margin-bottom: 16px;
+        }
+        .split-section:last-child {
+            margin-bottom: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mx-auto p-2">
+        
+        <!-- <h1 class="text-3xl font-bold mb-6 text-gray-800">商业画布</h1> -->
+        
+        <!-- 将上下区域合并到一个画布中 -->
+        <div class="canvas">
+            <table class="canvas-table">
+                <!-- 上半区域 -->
+                <tr class="h-3/4">
+                    <td class="w-1/5">
+                        <div class="section">
+                            <div class="section-header">
+                                <h2 class="section-title">重要伙伴</h2>
+                                <button class="add-btn" onclick="showDialog('partners')">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                                    </svg>
+                                </button>
+                            </div>
+                            <div class="tags-container" id="partners"></div>
+                        </div>
+                    </td>
+                    <td class="w-1/5">
+                        <div class="section split-section">
+                            <div class="section-header">
+                                <h2 class="section-title">关键业务</h2>
+                                <button class="add-btn" onclick="showDialog('keyActivities')">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                                    </svg>
+                                </button>
+                            </div>
+                            <div class="tags-container" id="keyActivities"></div>
+                        </div>
+                        <div class="section split-section">
+                            <div class="section-header">
+                                <h2 class="section-title">核心资源</h2>
+                                <button class="add-btn" onclick="showDialog('keyResources')">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                                    </svg>
+                                </button>
+                            </div>
+                            <div class="tags-container" id="keyResources"></div>
+                        </div>
+                    </td>
+                    <td class="w-1/5">
+                        <div class="section">
+                            <div class="section-header">
+                                <h2 class="section-title">价值主张</h2>
+                                <button class="add-btn" onclick="showDialog('valueProposition')">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                                    </svg>
+                                </button>
+                            </div>
+                            <div class="tags-container" id="valueProposition"></div>
+                        </div>
+                    </td>
+                    <td class="w-1/5">
+                        <div class="section split-section">
+                            <div class="section-header">
+                                <h2 class="section-title">客户关系</h2>
+                                <button class="add-btn" onclick="showDialog('customerRelationships')">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                                    </svg>
+                                </button>
+                            </div>
+                            <div class="tags-container" id="customerRelationships"></div>
+                        </div>
+                        <div class="section split-section">
+                            <div class="section-header">
+                                <h2 class="section-title">渠道通路</h2>
+                                <button class="add-btn" onclick="showDialog('channels')">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                                    </svg>
+                                </button>
+                            </div>
+                            <div class="tags-container" id="channels"></div>
+                        </div>
+                    </td>
+                    <td class="w-1/5">
+                        <div class="section">
+                            <div class="section-header">
+                                <h2 class="section-title">客户细分</h2>
+                                <button class="add-btn" onclick="showDialog('customerSegments')">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                                    </svg>
+                                </button>
+                            </div>
+                            <div class="tags-container" id="customerSegments"></div>
+                        </div>
+                    </td>
+                </tr>
+                <!-- 下半区域 -->
+                <tr class="h-1/4">
+                    <td colspan="2">
+                        <div class="section">
+                            <div class="section-header">
+                                <h2 class="section-title">成本结构</h2>
+                                <button class="add-btn" onclick="showDialog('costStructure')">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                                    </svg>
+                                </button>
+                            </div>
+                            <div class="tags-container" id="costStructure"></div>
+                        </div>
+                    </td>
+                    <td colspan="2">
+                        <div class="section">
+                            <div class="section-header">
+                                <h2 class="section-title">收入来源</h2>
+                                <button class="add-btn" onclick="showDialog('revenueStreams')">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                                    </svg>
+                                </button>
+                            </div>
+                            <div class="tags-container" id="revenueStreams"></div>
+                        </div>
+                    </td>
+                    <td colspan="1" class="relative">
+                        <a href="index.html" class="text-sm text-gray-500 hover:text-gray-700 inline-flex items-center gap-1 absolute bottom-0 right-0 mb-4 mr-4">
+                            <i class="ri-arrow-left-line"></i>
+                            <span>返回首页</span>
+                        </a>  
+                    </td>
+                </tr>
+            </table>
+        </div>
+    </div>
+
+    <!-- 添加弹窗HTML -->
+    <div id="dialog" class="dialog hidden">
+        <div class="dialog-overlay"></div>
+        <div class="dialog-content">
+            <h3 class="dialog-title">添加项目</h3>
+            <input type="text" id="itemInput" class="dialog-input" placeholder="请输入项目名称">
+            <div class="dialog-buttons">
+                <button onclick="closeDialog()" class="dialog-btn cancel-btn">取消</button>
+                <button onclick="confirmAdd()" class="dialog-btn confirm-btn">确定</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentAreaId = '';
+
+        function showDialog(areaId) {
+            currentAreaId = areaId;
+            document.getElementById('dialog').classList.remove('hidden');
+            document.getElementById('itemInput').value = '';
+            document.getElementById('itemInput').focus();
+        }
+
+        function closeDialog() {
+            document.getElementById('dialog').classList.add('hidden');
+            currentAreaId = '';
+        }
+
+        function confirmAdd() {
+            const itemName = document.getElementById('itemInput').value.trim();
+            if (itemName && currentAreaId) {
+                const tag = document.createElement('div');
+                tag.className = 'tag';
+                tag.innerHTML = `
+                    <span>${itemName}</span>
+                    <span class="delete-btn" onclick="this.parentElement.remove()">×</span>
+                `;
+                document.getElementById(currentAreaId).appendChild(tag);
+                closeDialog();
+            }
+        }
+
+        // 添加按下回车键确认的功能
+        document.getElementById('itemInput').addEventListener('keyup', function(event) {
+            if (event.key === 'Enter') {
+                confirmAdd();
+            }
+        });
+    </script>
+</body>
+</html>

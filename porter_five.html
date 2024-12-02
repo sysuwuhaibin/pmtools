@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>波特五力分析工具</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@4.1.0/fonts/remixicon.css" rel="stylesheet"/>
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-7xl mx-auto">
+        <!-- 修改标题部分的布局 -->
+        <div class="flex items-center mb-8 relative">
+            <a href="index.html" class="text-sm text-gray-500 hover:text-gray-700 inline-flex items-center gap-1 absolute left-0">
+                <i class="ri-arrow-left-line"></i>
+                <span>返回首页</span>
+            </a>
+            <h1 class="text-2xl font-bold text-gray-800 flex-1 text-center">波特五力分析工具</h1>
+        </div>
+        
+        <!-- 五力布局 -->
+        <div class="grid grid-cols-3 gap-6">
+            <!-- 上方：供应商议价能力 -->
+            <div class="col-start-2">
+                <div class="bg-white rounded-3xl shadow-lg border-t-4 border-blue-500 p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center gap-3">
+                            <i class="ri-truck-line text-2xl text-blue-500"></i>
+                            <h2 class="text-lg font-semibold text-blue-900">供应商议价能力</h2>
+                        </div>
+                        <button onclick="openDialog('suppliers')" 
+                                class="p-2 text-blue-600 hover:bg-blue-50 rounded-xl">
+                            <i class="ri-add-line text-xl"></i>
+                        </button>
+                    </div>
+                    <div class="overflow-y-auto h-48" id="suppliers"></div>
+                </div>
+            </div>
+
+            <!-- 中间行：潜在进入者、行业竞争、替代品威胁 -->
+            <div class="col-span-3 grid grid-cols-3 gap-6">
+                <!-- 潜在进入者 -->
+                <div class="bg-white rounded-3xl shadow-lg border-t-4 border-purple-500 p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center gap-3">
+                            <i class="ri-door-line text-2xl text-purple-500"></i>
+                            <h2 class="text-lg font-semibold text-purple-900">潜在进入者</h2>
+                        </div>
+                        <button onclick="openDialog('newEntrants')" 
+                                class="p-2 text-purple-600 hover:bg-purple-50 rounded-xl">
+                            <i class="ri-add-line text-xl"></i>
+                        </button>
+                    </div>
+                    <div class="overflow-y-auto h-48" id="newEntrants"></div>
+                </div>
+
+                <!-- 行业竞争 -->
+                <div class="bg-white rounded-3xl shadow-lg border-t-4 border-red-500 p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center gap-3">
+                            <i class="ri-sword-line text-2xl text-red-500"></i>
+                            <h2 class="text-lg font-semibold text-red-900">行业竞争</h2>
+                        </div>
+                        <button onclick="openDialog('competition')" 
+                                class="p-2 text-red-600 hover:bg-red-50 rounded-xl">
+                            <i class="ri-add-line text-xl"></i>
+                        </button>
+                    </div>
+                    <div class="overflow-y-auto h-48" id="competition"></div>
+                </div>
+
+                <!-- 替代品威胁 -->
+                <div class="bg-white rounded-3xl shadow-lg border-t-4 border-green-500 p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center gap-3">
+                            <i class="ri-swap-line text-2xl text-green-500"></i>
+                            <h2 class="text-lg font-semibold text-green-900">替代品威胁</h2>
+                        </div>
+                        <button onclick="openDialog('substitutes')" 
+                                class="p-2 text-green-600 hover:bg-green-50 rounded-xl">
+                            <i class="ri-add-line text-xl"></i>
+                        </button>
+                    </div>
+                    <div class="overflow-y-auto h-48" id="substitutes"></div>
+                </div>
+            </div>
+
+            <!-- 下方：购买者议价能力 -->
+            <div class="col-start-2">
+                <div class="bg-white rounded-3xl shadow-lg border-t-4 border-amber-500 p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center gap-3">
+                            <i class="ri-user-voice-line text-2xl text-amber-500"></i>
+                            <h2 class="text-lg font-semibold text-amber-900">购买者议价能力</h2>
+                        </div>
+                        <button onclick="openDialog('buyers')" 
+                                class="p-2 text-amber-600 hover:bg-amber-50 rounded-xl">
+                            <i class="ri-add-line text-xl"></i>
+                        </button>
+                    </div>
+                    <div class="overflow-y-auto h-48" id="buyers"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dialog -->
+    <dialog id="addDialog" class="rounded-2xl shadow-xl p-0 backdrop:bg-gray-800/50">
+        <div class="w-[32rem] max-w-full">
+            <div class="p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2" id="dialogTitle">
+                    <i class="ri-add-line"></i>
+                    <span>添加项目</span>
+                </h3>
+                <textarea id="itemContent" 
+                    class="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all duration-200"
+                    rows="3" 
+                    placeholder="请输入内容..."></textarea>
+            </div>
+            <div class="flex justify-end gap-3 px-6 py-4 bg-gray-50 rounded-b-2xl">
+                <button onclick="closeDialog()" 
+                    class="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-xl transition-colors duration-200">
+                    取消
+                </button>
+                <button onclick="addItem()" 
+                    class="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition-colors duration-200">
+                    确定
+                </button>
+            </div>
+        </div>
+    </dialog>
+
+    <script>
+        const dialog = document.getElementById('addDialog');
+        const itemContent = document.getElementById('itemContent');
+        let currentCategory = '';
+        
+        const colorSchemes = {
+            suppliers: {
+                tagBg: 'bg-blue-50',
+                tagText: 'text-blue-700',
+                icon: 'ri-checkbox-circle-line text-blue-500'
+            },
+            newEntrants: {
+                tagBg: 'bg-purple-50',
+                tagText: 'text-purple-700',
+                icon: 'ri-checkbox-circle-line text-purple-500'
+            },
+            competition: {
+                tagBg: 'bg-red-50',
+                tagText: 'text-red-700',
+                icon: 'ri-checkbox-circle-line text-red-500'
+            },
+            substitutes: {
+                tagBg: 'bg-green-50',
+                tagText: 'text-green-700',
+                icon: 'ri-checkbox-circle-line text-green-500'
+            },
+            buyers: {
+                tagBg: 'bg-amber-50',
+                tagText: 'text-amber-700',
+                icon: 'ri-checkbox-circle-line text-amber-500'
+            }
+        };
+
+        function openDialog(category) {
+            currentCategory = category;
+            itemContent.value = '';
+            dialog.showModal();
+        }
+
+        function closeDialog() {
+            dialog.close();
+        }
+
+        function addItem() {
+            const content = itemContent.value.trim();
+            if (!content) return;
+
+            const container = document.getElementById(currentCategory);
+            const tag = document.createElement('div');
+            const scheme = colorSchemes[currentCategory];
+            
+            tag.className = `inline-flex items-center gap-2 px-3 py-1.5 rounded-lg mb-2 mr-2 ${scheme.tagBg} ${scheme.tagText}`;
+            tag.innerHTML = `
+                <i class="${scheme.icon}"></i>
+                <span>${content}</span>
+                <button onclick="this.parentElement.remove()" 
+                        class="ml-1 p-0.5 hover:bg-black/5 rounded-lg opacity-60 hover:opacity-100 transition-all">
+                    <i class="ri-close-line"></i>
+                </button>
+            `;
+            container.appendChild(tag);
+            closeDialog();
+        }
+
+        // 按下Enter键时提交
+        itemContent.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                addItem();
+            }
+        });
+    </script>
+
+    <style>
+        .overflow-y-auto {
+            display: flex;
+            flex-wrap: wrap;
+            align-content: flex-start;
+            gap: 0.5rem;
+            padding-right: 6px; /* 为滚动条预留空间 */
+            overflow-y: auto; /* 确保启用垂直滚动 */
+        }
+
+        .overflow-y-auto::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .overflow-y-auto::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .overflow-y-auto::-webkit-scrollbar-thumb {
+            background-color: rgba(0, 0, 0, 0.1);
+            border-radius: 3px;
+            transition: background-color 0.2s;
+        }
+
+        .overflow-y-auto:hover::-webkit-scrollbar-thumb {
+            background-color: rgba(0, 0, 0, 0.2);
+        }
+
+        .overflow-y-auto {
+            scrollbar-width: thin;
+            scrollbar-color: rgba(0, 0, 0, 0.1) transparent;
+        }
+    </style>
+</body>
+</html> 

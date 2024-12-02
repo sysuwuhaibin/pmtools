@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SWOT分析工具</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@4.1.0/fonts/remixicon.css" rel="stylesheet"/>
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-7xl mx-auto">
+        
+        <!-- 修改标题部分的布局 -->
+        <div class="flex items-center mb-8 relative">
+            <a href="index.html" class="text-sm text-gray-500 hover:text-gray-700 inline-flex items-center gap-1 absolute left-0">
+                <i class="ri-arrow-left-line"></i>
+                <span>返回首页</span>
+            </a>
+            <h1 class="text-2xl font-bold text-gray-800 flex-1 text-center">SWOT分析工具</h1>
+        </div>
+        
+        <!-- 使用 grid 明确指定行列 -->
+        <div class="grid grid-cols-2 grid-rows-2 gap-8 h-[calc(100vh-8rem)]">
+            <!-- Strengths -->
+            <div class="bg-white rounded-3xl shadow-lg border-t-4 border-emerald-500 p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center gap-3">
+                        <i class="ri-award-line text-2xl text-emerald-500"></i>
+                        <h2 class="text-lg font-semibold text-emerald-900">优势 (S)</h2>
+                    </div>
+                    <button onclick="openDialog('strengths')" 
+                            class="p-2 text-emerald-600 hover:bg-emerald-50 rounded-xl">
+                        <i class="ri-add-line text-xl"></i>
+                    </button>
+                </div>
+                <div class="overflow-y-auto" id="strengths"></div>
+            </div>
+
+            <!-- Weaknesses -->
+            <div class="bg-white rounded-3xl shadow-lg border-t-4 border-rose-500 p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center gap-3">
+                        <i class="ri-error-warning-line text-2xl text-rose-500"></i>
+                        <h2 class="text-lg font-semibold text-rose-900">劣势 (W)</h2>
+                    </div>
+                    <button onclick="openDialog('weaknesses')" 
+                            class="p-2 text-rose-600 hover:bg-rose-50 rounded-xl">
+                        <i class="ri-add-line text-xl"></i>
+                    </button>
+                </div>
+                <div class="overflow-y-auto" id="weaknesses"></div>
+            </div>
+
+            <!-- Opportunities -->
+            <div class="bg-white rounded-3xl shadow-lg border-t-4 border-blue-500 p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center gap-3">
+                        <i class="ri-lightbulb-line text-2xl text-blue-500"></i>
+                        <h2 class="text-lg font-semibold text-blue-900">机会 (O)</h2>
+                    </div>
+                    <button onclick="openDialog('opportunities')" 
+                            class="p-2 text-blue-600 hover:bg-blue-50 rounded-xl">
+                        <i class="ri-add-line text-xl"></i>
+                    </button>
+                </div>
+                <div class="overflow-y-auto" id="opportunities"></div>
+            </div>
+
+            <!-- Threats -->
+            <div class="bg-white rounded-3xl shadow-lg border-t-4 border-amber-500 p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center gap-3">
+                        <i class="ri-alert-line text-2xl text-amber-500"></i>
+                        <h2 class="text-lg font-semibold text-amber-900">威胁 (T)</h2>
+                    </div>
+                    <button onclick="openDialog('threats')" 
+                            class="p-2 text-amber-600 hover:bg-amber-50 rounded-xl">
+                        <i class="ri-add-line text-xl"></i>
+                    </button>
+                </div>
+                <div class="overflow-y-auto" id="threats"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dialog -->
+    <dialog id="addDialog" class="rounded-2xl shadow-xl p-0 backdrop:bg-gray-800/50">
+        <div class="w-[32rem] max-w-full">
+            <div class="p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2" id="dialogTitle">
+                    <i class="ri-add-line"></i>
+                    <span>添加项目</span>
+                </h3>
+                <textarea id="itemContent" 
+                    class="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all duration-200"
+                    rows="3" 
+                    placeholder="请输入内容..."></textarea>
+            </div>
+            <div class="flex justify-end gap-3 px-6 py-4 bg-gray-50 rounded-b-2xl">
+                <button onclick="closeDialog()" 
+                    class="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-xl transition-colors duration-200">
+                    取消
+                </button>
+                <button onclick="addItem()" 
+                    class="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition-colors duration-200">
+                    确定
+                </button>
+            </div>
+        </div>
+    </dialog>
+
+    <script>
+        const dialog = document.getElementById('addDialog');
+        const itemContent = document.getElementById('itemContent');
+        let currentCategory = '';
+        
+        const colorSchemes = {
+            strengths: {
+                tagBg: 'bg-emerald-50',
+                tagText: 'text-emerald-700',
+                icon: 'ri-checkbox-circle-line text-emerald-500'
+            },
+            weaknesses: {
+                tagBg: 'bg-rose-50',
+                tagText: 'text-rose-700',
+                icon: 'ri-close-circle-line text-rose-500'
+            },
+            opportunities: {
+                tagBg: 'bg-blue-50',
+                tagText: 'text-blue-700',
+                icon: 'ri-star-line text-blue-500'
+            },
+            threats: {
+                tagBg: 'bg-amber-50',
+                tagText: 'text-amber-700',
+                icon: 'ri-shield-flash-line text-amber-500'
+            }
+        };
+
+        const titles = {
+            strengths: '添加优势',
+            weaknesses: '添加劣势',
+            opportunities: '添加机会',
+            threats: '添加威胁'
+        };
+
+        function openDialog(category) {
+            currentCategory = category;
+            document.getElementById('dialogTitle').textContent = titles[category];
+            itemContent.value = '';
+            dialog.showModal();
+            itemContent.focus();
+        }
+
+        function closeDialog() {
+            dialog.close();
+        }
+
+        function addItem() {
+            const content = itemContent.value.trim();
+            if (!content) return;
+
+            const container = document.getElementById(currentCategory);
+            const tag = document.createElement('div');
+            const scheme = colorSchemes[currentCategory];
+            
+            tag.className = `inline-flex items-center gap-2 px-3 py-1.5 rounded-lg mb-2 mr-2 ${scheme.tagBg} ${scheme.tagText}`;
+            tag.innerHTML = `
+                <i class="${scheme.icon}"></i>
+                <span>${content}</span>
+                <button onclick="this.parentElement.remove()" 
+                        class="ml-1 p-0.5 hover:bg-black/5 rounded-lg opacity-60 hover:opacity-100 transition-all">
+                    <i class="ri-close-line"></i>
+                </button>
+            `;
+            container.appendChild(tag);
+            closeDialog();
+        }
+
+        // 按下Enter键时提交
+        itemContent.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                addItem();
+            }
+        });
+    </script>
+
+    <style>
+        .overflow-y-auto {
+            display: flex;
+            flex-wrap: wrap;
+            align-content: flex-start;
+            gap: 0.5rem;
+            padding-right: 6px; /* 为滚动条预留空间 */
+            overflow-y: auto; /* 确保启用垂直滚动 */
+        }
+
+        /* 自定义滚动条样式 */
+        .overflow-y-auto::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .overflow-y-auto::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .overflow-y-auto::-webkit-scrollbar-thumb {
+            background-color: rgba(0, 0, 0, 0.1);
+            border-radius: 3px;
+            transition: background-color 0.2s;
+        }
+
+        .overflow-y-auto:hover::-webkit-scrollbar-thumb {
+            background-color: rgba(0, 0, 0, 0.2);
+        }
+
+        /* Firefox 滚动条样式 */
+        .overflow-y-auto {
+            scrollbar-width: thin;
+            scrollbar-color: rgba(0, 0, 0, 0.1) transparent;
+        }
+    </style>
+</body>
+</html> 
